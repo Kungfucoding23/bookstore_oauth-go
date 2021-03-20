@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 const (
 	headerXPublic   = "X-Public"
 	headerXClientID = "X-Client-ID"
-	headerXCallerID = "X-User-ID"
+	headerXCallerID = "X-Caller-ID"
 
 	paramAccessToken = "access_token"
 )
@@ -45,16 +46,52 @@ func IsPublic(request *http.Request) bool {
 	return request.Header.Get(headerXPublic) == "true"
 }
 
+func GetCallerID(request *http.Request) int64 {
+	if request == nil {
+		return 0
+	}
+	callerID, err := strconv.ParseInt(request.Header.Get(headerXCallerID), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return callerID
+}
+func GetClientID(request *http.Request) int64 {
+	if request == nil {
+		return 0
+	}
+	clientID, err := strconv.ParseInt(request.Header.Get(headerXClientID), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return clientID
+}
+
 func AuthenticateRequest(request *http.Request) *errors.RestErr {
 	if request == nil {
 		return nil
 	}
-	accessToken := strings.TrimSpace(request.URL.Query().Get(paramAccessToken))
+	cleanRequest(request)
+	accessTokenID := strings.TrimSpace(request.URL.Query().Get(paramAccessToken))
 	//http://api.bookstore.com/resource?access_token=?
-	if accessToken == "" {
+	if accessTokenID == "" {
 		return nil
 	}
+	at, err := getAccessToken(accessTokenID)
+	if err != nil {
+		return err
+	}
+	request.Header.Add(headerXClientID, fmt.Sprintf("%v", at.ClientID))
+	request.Header.Add(headerXCallerID, fmt.Sprintf("%v", at.UserID))
 	return nil
+}
+
+func cleanRequest(request *http.Request) {
+	if request == nil {
+		return
+	}
+	request.Header.Del(headerXClientID)
+	request.Header.Del(headerXCallerID)
 }
 
 func getAccessToken(accessTokenID string) (*accessToken, *errors.RestErr) {
