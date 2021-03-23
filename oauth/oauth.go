@@ -14,10 +14,9 @@ import (
 )
 
 const (
-	headerXPublic   = "X-Public"
-	headerXClientID = "X-Client-ID"
-	headerXCallerID = "X-Caller-ID"
-
+	headerXPublic    = "X-Public"
+	headerXClientID  = "X-Client-ID"
+	headerXCallerID  = "X-Caller-ID"
 	paramAccessToken = "access_token"
 )
 
